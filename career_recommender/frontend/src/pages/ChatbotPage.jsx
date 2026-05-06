@@ -355,9 +355,9 @@ export default function ChatbotPage() {
     .filter(({ conv }) => (conv.preview || "Chat").toLowerCase().includes(historySearch.trim().toLowerCase()));
 
   return (
-    <main className="flex min-h-screen w-full items-center justify-center bg-slate-50 px-4 py-6">
+    <main className="flex h-screen w-full bg-white">
       <div
-        className={`grid h-[min(860px,calc(100vh-3rem))] min-h-[620px] w-full max-w-6xl overflow-hidden rounded-[30px] border border-slate-200 bg-white text-slate-900 shadow-[0_20px_45px_rgba(15,23,42,0.06)] transition-[grid-template-columns] duration-300 ${
+        className={`grid h-full w-full overflow-hidden text-slate-900 transition-[grid-template-columns] duration-300 ${
         sidebarOpen ? "grid-cols-[20rem_minmax(0,1fr)]" : "grid-cols-[0_minmax(0,1fr)]"
       }`}
       >
@@ -582,11 +582,7 @@ export default function ChatbotPage() {
               placeholder="Ask anything"
               className="min-h-12 flex-1 border-0 bg-transparent px-2 py-3 text-base text-slate-900 outline-none placeholder:text-slate-400 focus:ring-0"
             />
-            <button type="button" className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 sm:flex" aria-label="Voice input">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18.75a6.75 6.75 0 0 0 6.75-6.75M5.25 12A6.75 6.75 0 0 0 12 18.75m0 0v2.25m0-2.25A3.75 3.75 0 0 1 8.25 15V6a3.75 3.75 0 1 1 7.5 0v9A3.75 3.75 0 0 1 12 18.75Z" />
-              </svg>
-            </button>
+
             <button
               type="submit"
               disabled={loading || !inputText.trim()}

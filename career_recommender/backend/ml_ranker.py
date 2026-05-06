@@ -852,24 +852,52 @@ def _section_checks(resume_text: str) -> tuple[list[dict], float]:
     checks: list[dict] = []
 
     for title, patterns, detail in RESUME_SECTION_RULES:
-        present = any(re.search(pattern, normalized) for pattern in patterns)
-        checks.append(
-            {
+        if title == "Education":
+            grad_present = any(re.search(pattern, normalized) for pattern in patterns)
+            tenth_present = bool(re.search(r"\b(10th|sslc|matriculation|tenth)\b", normalized))
+            twelfth_present = bool(re.search(r"\b(12th|hsc|higher secondary|intermediate|twelfth)\b", normalized))
+            
+            present = grad_present and tenth_present and twelfth_present
+            
+            if present:
+                final_detail = detail
+            else:
+                missing_parts = []
+                if not grad_present: missing_parts.append("graduation degree")
+                if not tenth_present: missing_parts.append("10th marksheet")
+                if not twelfth_present: missing_parts.append("12th marksheet")
+                
+                final_detail = f"Missing: {', '.join(missing_parts)}. Add your complete academic history (graduation, 10th, and 12th details) to strengthen ATS readability."
+                
+            checks.append({
                 "title": title,
                 "present": present,
-                "detail": detail if present else f"Add a clear {title.lower()} section to strengthen ATS readability.",
-            }
-        )
+                "detail": final_detail
+            })
+        else:
+            present = any(re.search(pattern, normalized) for pattern in patterns)
+            checks.append(
+                {
+                    "title": title,
+                    "present": present,
+                    "detail": detail if present else f"Add a clear {title.lower()} section to strengthen ATS readability.",
+                }
+            )
 
     score = round((sum(1 for item in checks if item["present"]) / max(len(checks), 1)) * 100, 2)
     return checks, score
 
 
 def _impact_score(resume_text: str) -> tuple[float, dict]:
-    normalized = (resume_text or "").lower()
-    metrics_found = len(IMPACT_PATTERN.findall(resume_text or ""))
+    normalized = (resume_text or "").lower().strip()
+    if len(normalized) < 50:
+        return 0.0, {"metrics_found": 0, "action_verbs_found": 0}
+
+    metrics_found = len(IMPACT_PATTERN.findall(normalized))
     action_verbs_found = sum(1 for verb in ACTION_VERBS if re.search(rf"\b{re.escape(verb)}\b", normalized))
-    score = round(min(100.0, 25 + (metrics_found * 18) + (action_verbs_found * 6)), 2)
+    
+    # Give a small single-digit baseline (5) for having readable text
+    score = round(min(100.0, 5 + (metrics_found * 25) + (action_verbs_found * 10)), 2)
     return score, {
         "metrics_found": metrics_found,
         "action_verbs_found": action_verbs_found,
@@ -885,13 +913,15 @@ def _collect_market_skills(jobs: list[dict], top_n: int = 12) -> list[str]:
     return [skill for skill, _ in counter.most_common(top_n)]
 
 
-def _role_alignment_score(profile, target_role: str, resume_text: str, resume_skills: list[str]) -> tuple[float, list[str]]:
+def _role_alignment_score(target_role: str, resume_text: str, resume_skills: list[str]) -> tuple[float, list[str]]:
     role_tokens = _tokenize_resume_role(target_role)
     if not role_tokens:
-        return 70.0, []
+        return 5.0, []
 
-    searchable_text = build_profile_document(profile).lower()
-    searchable_text = f"{searchable_text} {(resume_text or '').lower()}".strip()
+    searchable_text = (resume_text or "").lower().strip()
+    if not searchable_text:
+        return 0.0, []
+
     normalized_skills = normalize_skills(resume_skills)
 
     matched_tokens: list[str] = []
@@ -899,11 +929,15 @@ def _role_alignment_score(profile, target_role: str, resume_text: str, resume_sk
         if token in searchable_text or any(token in skill for skill in normalized_skills):
             matched_tokens.append(token)
 
-    score = round(35 + ((len(matched_tokens) / len(role_tokens)) * 65), 2)
+    # Give a small baseline (5) for a readable document, then scale
+    score = round(5 + ((len(matched_tokens) / len(role_tokens)) * 95), 2)
     return min(score, 100.0), matched_tokens
 
 
 def _market_readiness_score(candidate_skills: set[str], jobs: list[dict]) -> float:
+    if not candidate_skills:
+        return 0.0
+
     coverage_scores: list[float] = []
     for job in jobs[:8]:
         job_skills = set(extract_skills_from_text(f"{job.get('job_title', '')} {job.get('job_description', '')}"))
@@ -922,14 +956,16 @@ def generate_resume_audit(profile, jobs: list[dict], target_role: str | None = N
     resume_text = getattr(profile, "resume_text", "") or ""
     profile_skills = normalize_skills(getattr(profile, "skills", []) or [])
     resume_skills = extract_skills_from_text(resume_text)
-    candidate_skills = set(profile_skills) | set(resume_skills)
+    
+    # Strictly evaluate only the skills found in the uploaded document
+    candidate_skills = set(resume_skills)
 
     market_skills = _collect_market_skills(jobs)
     matched_keywords = [skill for skill in market_skills if skill in candidate_skills]
     missing_keywords = [skill for skill in market_skills if skill not in candidate_skills]
 
-    keyword_match_score = round((len(matched_keywords) / max(len(market_skills), 1)) * 100, 2) if market_skills else 60.0
-    role_alignment_score, matched_role_tokens = _role_alignment_score(profile, resolved_role, resume_text, resume_skills)
+    keyword_match_score = round((len(matched_keywords) / max(len(market_skills), 1)) * 100, 2) if candidate_skills and market_skills else 0.0
+    role_alignment_score, matched_role_tokens = _role_alignment_score(resolved_role, resume_text, resume_skills)
     section_checks, section_score = _section_checks(resume_text)
     impact_score, impact_signals = _impact_score(resume_text)
     resume_strength_score = round((section_score * 0.6) + (impact_score * 0.4), 2)

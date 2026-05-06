@@ -32,7 +32,7 @@ export default function HomePage() {
               AI
             </span>
             <span>
-              <span className="block text-base font-bold text-slate-950">Career Assistant</span>
+              <span className="block text-base font-bold text-slate-950">Next Step AI</span>
               <span className="block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                 Smart guidance
               </span>
@@ -88,7 +88,7 @@ export default function HomePage() {
       <section id="how-it-works" className="card-panel overflow-hidden scroll-mt-28">
         <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
           <div>
-            <p className="font-mono text-xs uppercase tracking-[0.35em] text-tide">Full-stack AI platform</p>
+            <p className="font-mono text-sm font-bold uppercase tracking-[0.35em] text-tide">Next Step AI</p>
             <h2 className="mt-4 max-w-3xl font-display text-4xl font-bold leading-tight text-slate-950 sm:text-6xl">
               Navigate careers with live job data, skill intelligence, and personalized guidance.
             </h2>
@@ -128,12 +128,12 @@ export default function HomePage() {
 
       <section id="features" className="grid scroll-mt-28 gap-6 lg:grid-cols-3">
         {[
-          { title: "AI Ranking", body: "TF-IDF and cosine similarity score each job to surface the strongest matches first." },
-          { title: "Readiness Score", body: "Skill match, experience fit, domain alignment, and relevance combine into a 0-100 score." },
-          { title: "OpenAI Mentor", body: "Ask the mentor what to learn next, which role to target, and how to prepare for interviews." },
+          { tag: "Job Matching", title: "AI Ranking", body: "TF-IDF and cosine similarity score each job to surface the strongest matches first." },
+          { tag: "Evaluation", title: "Readiness Score", body: "Skill match, experience fit, domain alignment, and relevance combine into a 0-100 score." },
+          { tag: "Guidance", title: "OpenAI Mentor", body: "Ask the mentor what to learn next, which role to target, and how to prepare for interviews." },
         ].map((item) => (
           <article key={item.title} className="card-panel">
-            <p className="font-mono text-xs uppercase tracking-[0.25em] text-tide">{item.title}</p>
+            <p className="font-mono text-xs uppercase tracking-[0.25em] text-tide">{item.tag}</p>
             <h3 className="mt-3 font-display text-2xl font-bold text-slate-950">{item.title}</h3>
             <p className="mt-4 text-sm leading-7 text-slate-600">{item.body}</p>
           </article>

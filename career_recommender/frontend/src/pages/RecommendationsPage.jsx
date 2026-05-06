@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import client, { getApiErrorMessage, getRecommendations } from "../api/client";
+import ScrollToTopButton from "../components/ScrollToTopButton";
 import { getCourseForSkill } from "../utils/courseLinks";
 
 const ROLE_PRESETS = [
@@ -79,20 +80,20 @@ function OverallMissingSkillsPanel({ skills, limit = 6 }) {
   const visibleSkills = skills.slice(0, limit);
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
+    <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] lg:p-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.24em] text-rose-600">
+          <p className="font-mono text-xs font-bold uppercase tracking-[0.25em] text-rose-600">
             Top {visibleSkills.length} missing skills
           </p>
-          <h3 className="mt-1.5 text-xl font-bold text-slate-950">Top {visibleSkills.length} missing skills to learn next</h3>
-          <p className="mt-1.5 text-sm leading-6 text-slate-600">
+          <h3 className="mt-2 text-2xl font-bold tracking-[-0.03em] text-slate-950">Top {visibleSkills.length} missing skills to learn next</h3>
+          <p className="mt-2 text-base leading-7 text-slate-600">
             These are the highest-impact missing skills from your current recommendations.
           </p>
         </div>
-        <div className="rounded-xl bg-rose-50 px-7 py-3 text-center">
-          <p className="text-3xl font-bold text-rose-600">{visibleSkills.length}</p>
-          <p className="mt-0.5 font-mono text-[0.65rem] font-bold uppercase tracking-[0.18em] text-rose-600">
+        <div className="rounded-2xl bg-rose-50 px-8 py-4 text-center">
+          <p className="text-4xl font-bold text-rose-600">{visibleSkills.length}</p>
+          <p className="mt-1 font-mono text-xs font-bold uppercase tracking-[0.2em] text-rose-600">
             Priority skills
           </p>
         </div>
@@ -115,18 +116,18 @@ function SkillCloudPanel({ title, tone = "green", skills = [] }) {
       : "text-blue-700 bg-blue-100";
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
+    <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
       <p
-        className={`font-mono text-[0.68rem] font-bold uppercase tracking-[0.24em] ${
+        className={`font-mono text-xs font-bold uppercase tracking-[0.25em] ${
           tone === "green" ? "text-emerald-700" : "text-blue-700"
         }`}
       >
         {title}
       </p>
-      <div className="mt-3 flex flex-wrap gap-1.5">
+      <div className="mt-4 flex flex-wrap gap-2">
         {visibleSkills.length ? (
           visibleSkills.map((skill) => (
-            <span key={skill} className={`rounded-full px-2.5 py-1 text-xs font-medium ${toneClass}`}>
+            <span key={skill} className={`rounded-full px-3 py-1.5 text-sm font-medium ${toneClass}`}>
               {skill}
             </span>
           ))
@@ -163,10 +164,10 @@ function JobCard({ job, onSave, savingId }) {
   const jobId = job.external_job_id || job.job_id || `${job.company_name}-${job.job_title}`;
 
   return (
-    <article className="rounded-2xl border border-rose-100 bg-[linear-gradient(180deg,#ffffff,#fff7f7)] p-5 shadow-[0_14px_34px_rgba(15,23,42,0.06)]">
+    <article className="rounded-[30px] border border-rose-100 bg-[linear-gradient(180deg,#ffffff,#fff7f7)] p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] lg:p-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
-          <h3 className="text-xl font-bold leading-tight text-slate-950 sm:text-2xl">{job.job_title}</h3>
+          <h3 className="font-display text-2xl font-bold tracking-[-0.03em] text-slate-950 sm:text-3xl">{job.job_title}</h3>
           <p className="mt-2 text-base font-semibold text-slate-600">
             {job.company_name || "Company"} {job.location ? `- ${job.location}` : ""}
           </p>
@@ -267,7 +268,7 @@ function CompanyCard({ company }) {
   const url = company.careers_url || company.company_website || company.url;
 
   return (
-    <article className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+    <article className="rounded-[30px] border border-slate-200 bg-slate-50 p-6 lg:p-8">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h4 className="truncate text-base font-bold text-slate-950">{name}</h4>
@@ -332,8 +333,12 @@ export default function RecommendationsPage() {
     };
   }, [jobs, matchedSkills.length, missingSkills.length]);
 
-  const loadRecommendations = async ({ signal } = {}) => {
-    if (!desiredRole.trim()) {
+  const loadRecommendations = async ({ signal, overrideRole, overrideLocation, overrideMode } = {}) => {
+    const qRole = overrideRole !== undefined ? overrideRole : desiredRole;
+    const qLoc = overrideLocation !== undefined ? overrideLocation : location;
+    const qMode = overrideMode !== undefined ? overrideMode : mode;
+
+    if (!qRole.trim()) {
       setMessage("Enter a desired role to check your missing skills.");
       return;
     }
@@ -341,7 +346,7 @@ export default function RecommendationsPage() {
     setLoading(true);
     try {
       const data = await getRecommendations(
-        { mode, query: desiredRole, location },
+        { mode: qMode, query: qRole, location: qLoc },
         { signal }
       );
       setBundle(data);
@@ -357,7 +362,29 @@ export default function RecommendationsPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    loadRecommendations({ signal: controller.signal });
+    
+    const init = async () => {
+      let r = "Backend Developer Intern";
+      let l = "India";
+      let m = "internship";
+      try {
+        const { data } = await client.get("/profile/view");
+        if (data.desired_role) { r = data.desired_role; setDesiredRole(r); }
+        if (data.location) { l = data.location; setLocation(l); }
+        if (data.mode) { m = data.mode; setMode(m); }
+      } catch (err) {
+        // Ignore if no profile
+      }
+      
+      loadRecommendations({ 
+        signal: controller.signal, 
+        overrideRole: r, 
+        overrideLocation: l, 
+        overrideMode: m 
+      });
+    };
+    
+    init();
     return () => controller.abort();
   }, []);
 
@@ -395,27 +422,27 @@ export default function RecommendationsPage() {
 
   return (
     <div className="mx-auto max-w-[1760px] space-y-4 font-sans">
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] lg:p-5">
-        <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_minmax(520px,0.9fr)] 2xl:items-end">
+      <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] lg:p-8">
+        <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_minmax(520px,0.9fr)] 2xl:items-end">
           <div>
-            <p className="font-mono text-xs font-bold uppercase tracking-[0.32em] text-slate-500">
+            <p className="font-mono text-xs font-bold uppercase tracking-[0.25em] text-slate-500">
               Recommendations
             </p>
-            <h2 className="mt-2 text-3xl font-bold leading-tight text-slate-950 sm:text-4xl">
+            <h2 className="mt-3 font-display text-4xl font-bold tracking-[-0.04em] text-slate-950 sm:text-5xl">
               Top AI-ranked roles for your profile
             </h2>
-            <p className="mt-2 max-w-3xl text-base leading-7 text-slate-600">
+            <p className="mt-3 max-w-3xl text-lg leading-8 text-slate-600">
               Searching in <span className="font-bold text-slate-900">{location || "your location"}</span> for{" "}
               <span className="font-bold text-slate-900">{mode}</span> opportunities matching{" "}
               <span className="font-bold text-slate-900">{desiredRole || "your desired role"}</span>.
             </p>
-            <p className="mt-2 max-w-3xl text-base leading-7 text-slate-600">
+            <p className="mt-2 max-w-3xl text-lg leading-8 text-slate-600">
               Results prioritize your chosen location first. If there are not enough company matches,
               the remaining companies are ordered by role relevance.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(140px,0.7fr)_140px_100px_auto] xl:gap-3">
+          <form onSubmit={handleSubmit} className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(140px,0.7fr)_140px_auto] xl:gap-3">
             <label>
               <span className="sr-only">Desired role</span>
               <input
@@ -441,12 +468,6 @@ export default function RecommendationsPage() {
                 <option value="job">Job</option>
               </select>
             </label>
-            <div
-              className="field-input flex items-center rounded-xl text-base"
-              aria-label={`Top skills count ${STATIC_PRIORITY_SKILL_LIMIT}`}
-            >
-              {STATIC_PRIORITY_SKILL_LIMIT}
-            </div>
             <button type="submit" className="primary-button rounded-xl px-5 py-3" disabled={loading}>
               {loading ? "Checking..." : "Refresh"}
             </button>
@@ -509,20 +530,20 @@ export default function RecommendationsPage() {
           )}
         </section>
 
-        <aside className="space-y-4 2xl:sticky 2xl:top-4 2xl:self-start">
-          <section className="rounded-2xl border border-rose-100 bg-[linear-gradient(180deg,#ffffff,#fff7f7)] p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
+        <aside className="space-y-6 2xl:sticky 2xl:top-4 2xl:self-start">
+          <section className="rounded-[30px] border border-rose-100 bg-[linear-gradient(180deg,#ffffff,#fff7f7)] p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                <p className="font-mono text-xs font-bold uppercase tracking-[0.25em] text-slate-500">
                   Top 20 companies hiring
                 </p>
-                <p className="mt-2 text-sm leading-6 text-slate-500">
+                <p className="mt-2 text-base leading-7 text-slate-500">
                   Location matches appear first, then closest role matches.
                 </p>
               </div>
-              <div className="rounded-xl bg-slate-100 px-4 py-3 text-center">
-                <p className="text-xl font-bold text-slate-950">{topCompanies.length || 20}</p>
-                <p className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.14em] text-slate-500">
+              <div className="rounded-2xl bg-slate-100 px-5 py-4 text-center">
+                <p className="text-3xl font-bold text-slate-950">{topCompanies.length || 20}</p>
+                <p className="mt-1 font-mono text-[0.68rem] font-bold uppercase tracking-[0.18em] text-slate-500">
                   Companies
                 </p>
               </div>
@@ -541,8 +562,8 @@ export default function RecommendationsPage() {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-rose-100 bg-[linear-gradient(180deg,#ffffff,#fff7f7)] p-4">
-            <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-tide">
+          <section className="rounded-[30px] border border-rose-100 bg-[linear-gradient(180deg,#ffffff,#fff7f7)] p-6 lg:p-8">
+            <p className="font-mono text-xs font-bold uppercase tracking-[0.25em] text-tide">
               Next action
             </p>
             <p className="mt-2 text-base leading-7 text-slate-600">
@@ -555,6 +576,8 @@ export default function RecommendationsPage() {
           </section>
         </aside>
       </div>
+
+      <ScrollToTopButton />
     </div>
   );
 }

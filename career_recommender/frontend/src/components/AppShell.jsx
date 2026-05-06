@@ -26,7 +26,7 @@ export default function AppShell({ children }) {
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">AI Career Assistant</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Next Step AI</p>
                 <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">Smart Career Guidance</h1>
               </div>
               <div className="flex flex-wrap items-center gap-2">

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import client from "../api/client";
 import RoadmapTimeline from "../components/RoadmapTimeline";
+import ScrollToTopButton from "../components/ScrollToTopButton";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
 
@@ -2184,6 +2185,8 @@ return (
       )}
 
       {interviewPack && <InterviewPrepSection interviewPack={interviewPack} targetRole={roadmap?.target_role || targetRole} />}
+      
+      <ScrollToTopButton />
     </div>
   );
 }

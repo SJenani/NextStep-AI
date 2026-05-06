@@ -140,9 +140,19 @@ const COURSE_LINKS = {
     note: "Free courses and credentials",
   },
   "problem solving": {
-    provider: "IBM SkillsBuild",
-    url: "https://skillsbuild.org/",
-    note: "Free courses and credentials",
+    provider: "NPTEL",
+    url: "https://nptel.ac.in/courses",
+    note: "University-level lecture courses",
+  },
+  fresher: {
+    provider: "NPTEL",
+    url: "https://nptel.ac.in/courses",
+    note: "Foundational university lectures",
+  },
+  intern: {
+    provider: "Udemy",
+    url: "https://www.udemy.com/courses/search/?q=internship",
+    note: "Practical skills for internships",
   },
   communication: {
     provider: "IBM SkillsBuild",

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import client from "../api/client";
 import { ResumeSkeleton } from "../components/skeletons/PageSkeleton";
+import ScrollToTopButton from "../components/ScrollToTopButton";
 
 function ScoreCard({ label, value, tone, showMax = true }) {
   const tones = {
@@ -70,7 +71,6 @@ function ChipCloud({ title, tone, items, emptyText }) {
 
 export default function ResumeUploadPage() {
   const [resumeFile, setResumeFile] = useState(null);
-  const [linkedinFile, setLinkedinFile] = useState(null);
   const [certificateFiles, setCertificateFiles] = useState([]);
   const [result, setResult] = useState(null);
   const [audit, setAudit] = useState(null);
@@ -79,15 +79,50 @@ export default function ResumeUploadPage() {
   const [loadingAudit, setLoadingAudit] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const CACHE_KEY = "resume_upload_cache";
+  const CACHE_TTL_MS = 1000 * 60 * 2; // 2 minutes
+
+  const loadCache = () => {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      
+      const parsed = JSON.parse(raw);
+      if (Date.now() - parsed.ts > CACHE_TTL_MS) {
+        localStorage.removeItem(CACHE_KEY);
+        return null;
+      }
+      return parsed.data;
+    } catch {
+      return null;
+    }
+  };
+
+  const saveCache = (data) => {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+    } catch {
+      // ignore
+    }
+  };
+
   useEffect(() => {
     let ignore = false;
 
     async function loadProfile() {
       setLoading(true);
+      
+      const cached = loadCache();
+      if (cached) {
+        setResult(cached.result);
+        setAudit(cached.audit);
+        setTargetRole(cached.targetRole);
+      }
+
       try {
         const { data } = await client.get("/profile/view");
-        if (!ignore) {
-          setTargetRole(data.desired_role || "");
+        if (!ignore && data.desired_role && (!cached || !cached.targetRole)) {
+          setTargetRole(data.desired_role);
         }
       } catch {
         // Upload still works without an existing profile.
@@ -110,17 +145,14 @@ export default function ResumeUploadPage() {
 
   const handleUpload = async (event) => {
     event.preventDefault();
-    if (!resumeFile && !linkedinFile && !certificateFiles.length) {
-      setMessage("Upload at least one PDF: resume, LinkedIn PDF, or certificate.");
+    if (!resumeFile && !certificateFiles.length) {
+      setMessage("Upload at least one PDF: resume or certificate.");
       return;
     }
 
     const formData = new FormData();
     if (resumeFile) {
       formData.append("resume", resumeFile);
-    }
-    if (linkedinFile) {
-      formData.append("linkedin_pdf", linkedinFile);
     }
     certificateFiles.forEach((file) => {
       formData.append("certificates", file);
@@ -133,9 +165,19 @@ export default function ResumeUploadPage() {
       });
       setResult(data);
       setAudit(data.resume_audit || null);
-      if (!targetRole && data.resume_audit?.target_role) {
-        setTargetRole(data.resume_audit.target_role);
+      
+      let nextRole = targetRole;
+      if (!nextRole && data.resume_audit?.target_role) {
+        nextRole = data.resume_audit.target_role;
+        setTargetRole(nextRole);
       }
+      
+      saveCache({
+        result: data,
+        audit: data.resume_audit || null,
+        targetRole: nextRole
+      });
+      
       setMessage("Documents analyzed, structured profile draft created, skills updated, and ATS audit generated.");
     } catch (error) {
       setMessage(error.response?.data?.detail || "Document analysis failed.");
@@ -153,10 +195,15 @@ export default function ResumeUploadPage() {
       }
       const { data } = await client.get("/resume/audit", { params });
       setAudit(data);
+      saveCache({
+        result,
+        audit: data,
+        targetRole
+      });
       setMessage("ATS audit refreshed for the selected target role.");
     } catch (error) {
       setMessage(error.response?.data?.detail || "Unable to refresh ATS audit.");
-} finally {
+    } finally {
       setLoadingAudit(false);
     }
   };
@@ -167,16 +214,15 @@ export default function ResumeUploadPage() {
     <section className="space-y-6">
       <div className="card-panel">
         <p className="font-mono text-xs uppercase tracking-[0.25em] text-tide">Instant Profile Builder</p>
-        <h2 className="mt-3 font-display text-4xl font-bold text-slate-950">Upload resume, LinkedIn PDF, and certificates to build your profile faster</h2>
+        <h2 className="mt-3 font-display text-4xl font-bold text-slate-950">Upload resume and certificates to build your profile faster</h2>
         <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-600">
           The analyzer reads your documents, extracts skills, tools, projects, and experience highlights, then builds a structured profile
           draft that improves recommendation quality and ATS coaching.
         </p>
 
         <form onSubmit={handleUpload} className="mt-8 space-y-5">
-          <div className="grid gap-4 xl:grid-cols-3">
+          <div className="grid gap-4 xl:grid-cols-2">
             <FileSummary label="Resume PDF" file={resumeFile} onChange={(e) => setResumeFile(e.target.files?.[0] || null)} />
-            <FileSummary label="LinkedIn PDF" file={linkedinFile} onChange={(e) => setLinkedinFile(e.target.files?.[0] || null)} />
             <FileSummary
               label="Certificates PDFs"
               file={certificateFiles}
@@ -301,10 +347,34 @@ export default function ResumeUploadPage() {
                         <p className="text-lg font-semibold text-slate-950">{document.filename}</p>
                         <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{document.document_type}</p>
                       </div>
-                      <span className="muted-chip bg-slate-900 text-white">{document.extracted_skills.length} skills</span>
+                      
+                      <div className="flex items-center gap-3">
+                        {document.fit_check && (
+                          <div className="flex items-center gap-2">
+                             <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Role Fit</span>
+                             <span className={`muted-chip ${document.fit_check.score >= 50 ? 'bg-emerald-100 text-emerald-900' : 'bg-amber-100 text-amber-900'}`}>
+                                {Math.round(document.fit_check.score)}%
+                             </span>
+                          </div>
+                        )}
+                        <span className="muted-chip bg-slate-900 text-white">{document.extracted_skills?.length || 0} skills</span>
+                      </div>
                     </div>
 
                     <p className="mt-4 text-sm leading-7 text-slate-600">{document.extracted_text_preview || "No text extracted."}</p>
+
+                    {document.extracted_skills?.length > 0 && (
+                      <div className="mt-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 mb-2">Extracted Skills</p>
+                        <div className="flex flex-wrap gap-2">
+                          {document.extracted_skills.map((skill) => (
+                            <span key={`${document.filename}-skill-${skill}`} className="accent-chip border-emerald-200 bg-emerald-50 text-emerald-900">
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {document.detected_projects?.length > 0 && (
                       <div className="mt-4 flex flex-wrap gap-2">
@@ -427,7 +497,8 @@ export default function ResumeUploadPage() {
           </div>
         </>
       )}
+
+      <ScrollToTopButton />
     </section>
   );
 }
-

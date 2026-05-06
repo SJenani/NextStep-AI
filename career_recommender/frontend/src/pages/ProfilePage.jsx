@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { NavLink } from "react-router-dom";
 import client from "../api/client";
 import { useAuth } from "../context/AuthContext";
@@ -7,11 +7,11 @@ import { getOpportunityModeMismatch } from "../utils/opportunityMode";
 
 const emptyForm = {
   skills: "",
-  domain: "IT",
-  location: "Remote",
-  years_of_experience: 0,
-  experience_level: "student",
-  mode: "internship",
+  domain: "",
+  location: "",
+  years_of_experience: "",
+  experience_level: "",
+  mode: "",
   desired_role: "",
 };
 
@@ -92,6 +92,149 @@ function QuickAction({ to, label, note }) {
   );
 }
 
+const ChevronDownIcon = () => (
+  <svg
+    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 20 20"
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path
+      fillRule="evenodd"
+      d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+
+function CustomSelect({ value, onChange, options, placeholder, className = "" }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find((opt) => opt.value === value) || (value ? { label: value, value } : null);
+
+  return (
+    <div className={`relative ${className}`} ref={dropdownRef}>
+      <div
+        className="field-input flex cursor-pointer items-center justify-between"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span className={selectedOption ? "text-slate-900" : "text-slate-400"}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <ChevronDownIcon />
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-10 mt-2 max-h-60 w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white py-2 shadow-[0_10px_30px_rgba(15,23,42,0.1)]">
+          {options.map((option) => (
+            <div
+              key={option.value}
+              className={`cursor-pointer px-4 py-2.5 text-sm transition-colors ${
+                option.value === value
+                  ? "bg-blue-50 font-semibold text-blue-700"
+                  : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+              }`}
+              onClick={() => {
+                onChange(option.value);
+                setIsOpen(false);
+              }}
+            >
+              {option.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ComboBox({ value, onChange, options, placeholder, className = "" }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [inputValue, setInputValue] = useState(value || "");
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    setInputValue(value || "");
+  }, [value]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+        onChange(inputValue);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [inputValue, onChange]);
+
+  const filteredOptions = options.filter((opt) => opt.label.toLowerCase().includes((inputValue || "").toLowerCase()));
+
+  return (
+    <div className={`relative ${className}`} ref={dropdownRef}>
+      <div className="relative">
+        <input
+          className="field-input pr-10"
+          value={inputValue}
+          onChange={(e) => {
+            setInputValue(e.target.value);
+            setIsOpen(true);
+          }}
+          onFocus={() => setIsOpen(true)}
+          placeholder={placeholder}
+        />
+        <ChevronDownIcon />
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-10 mt-2 max-h-60 w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white py-2 shadow-[0_10px_30px_rgba(15,23,42,0.1)]">
+          {filteredOptions.length > 0 ? (
+            filteredOptions.map((option) => (
+              <div
+                key={option.value}
+                className={`cursor-pointer px-4 py-2.5 text-sm transition-colors ${
+                  option.value === value
+                    ? "bg-blue-50 font-semibold text-blue-700"
+                    : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                }`}
+                onClick={() => {
+                  setInputValue(option.value);
+                  onChange(option.value);
+                  setIsOpen(false);
+                }}
+              >
+                {option.label}
+              </div>
+            ))
+          ) : (
+            <div
+              className="cursor-pointer px-4 py-2.5 text-sm text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-900"
+              onClick={() => {
+                onChange(inputValue);
+                setIsOpen(false);
+              }}
+            >
+              Use "{inputValue}"
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ProfilePage() {
   const { user } = useAuth() || {};
   const [form, setForm] = useState(emptyForm);
@@ -110,11 +253,11 @@ export default function ProfilePage() {
         const { data } = await client.get("/profile/view");
         setForm({
           skills: (data.skills || []).join(", "),
-          domain: data.domain,
-          location: data.location,
-          years_of_experience: data.years_of_experience ?? 0,
-          experience_level: data.experience_level,
-          mode: data.mode,
+          domain: data.domain || "",
+          location: data.location || "",
+          years_of_experience: data.years_of_experience ?? "",
+          experience_level: data.experience_level || "",
+          mode: data.mode || "",
           desired_role: data.desired_role || "",
         });
       } catch (error) {
@@ -226,7 +369,21 @@ export default function ProfilePage() {
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">Profile Strength</p>
                 <p className="mt-2 text-4xl font-bold tracking-[-0.05em] text-slate-950">{completion.score}%</p>
               </div>
-              <div className="h-20 w-20 rounded-full border-[10px] border-blue-500 border-r-slate-200 border-t-slate-200" />
+              <svg className="h-20 w-20 -rotate-90" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" fill="transparent" stroke="#e2e8f0" strokeWidth="12" />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="40"
+                  fill="transparent"
+                  stroke="#3b82f6"
+                  strokeWidth="12"
+                  strokeDasharray="251.2"
+                  strokeDashoffset={251.2 - (251.2 * completion.score) / 100}
+                  strokeLinecap="round"
+                  className="transition-all duration-1000 ease-out"
+                />
+              </svg>
             </div>
             <div className="mt-5 h-3 overflow-hidden rounded-full bg-slate-200">
               <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-emerald-500" style={{ width: `${completion.score}%` }} />
@@ -273,11 +430,36 @@ export default function ProfilePage() {
             </Field>
 
             <Field label="Domain">
-              <input className="field-input" value={form.domain} onChange={(e) => setForm({ ...form, domain: e.target.value })} />
+              <CustomSelect
+                value={form.domain}
+                onChange={(val) => setForm({ ...form, domain: val })}
+                placeholder="Select a domain"
+                options={[
+                  { value: "IT & Software", label: "IT & Software" },
+                  { value: "Data & Analytics", label: "Data & Analytics" },
+                  { value: "Design & UX", label: "Design & UX" },
+                  { value: "Marketing", label: "Marketing" },
+                  { value: "Sales", label: "Sales" },
+                  { value: "Finance", label: "Finance" },
+                  { value: "Engineering", label: "Engineering" },
+                  { value: "HR & Ops", label: "HR & Ops" },
+                  ...(form.domain &&
+                  ![
+                    "IT & Software", "Data & Analytics", "Design & UX", "Marketing", "Sales", "Finance", "Engineering", "HR & Ops"
+                  ].includes(form.domain)
+                    ? [{ value: form.domain, label: form.domain }]
+                    : []),
+                ]}
+              />
             </Field>
 
             <Field label="Location">
-              <input className="field-input" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+              <input
+                className="field-input"
+                value={form.location}
+                onChange={(e) => setForm({ ...form, location: e.target.value })}
+                placeholder="e.g. Chennai, Bangalore, Remote"
+              />
             </Field>
 
             <Field label="Years of experience">
@@ -287,27 +469,37 @@ export default function ProfilePage() {
                 step="0.5"
                 className="field-input"
                 value={form.years_of_experience}
-                onChange={(e) => setForm({ ...form, years_of_experience: Number(e.target.value) })}
+                onChange={(e) => setForm({ ...form, years_of_experience: e.target.value === "" ? "" : Number(e.target.value) })}
                 placeholder="0"
               />
             </Field>
 
             <Field label="Experience level">
-              <select className="field-input" value={form.experience_level} onChange={(e) => setForm({ ...form, experience_level: e.target.value })}>
-                <option value="student">Student</option>
-                <option value="fresher">Fresher</option>
-                <option value="entry">Entry</option>
-                <option value="mid">Mid</option>
-                <option value="senior">Senior</option>
-                <option value="lead">Lead</option>
-              </select>
+              <CustomSelect
+                value={form.experience_level}
+                onChange={(val) => setForm({ ...form, experience_level: val })}
+                placeholder="Select experience level"
+                options={[
+                  { value: "student", label: "Student" },
+                  { value: "fresher", label: "Fresher" },
+                  { value: "entry", label: "Entry" },
+                  { value: "mid", label: "Mid" },
+                  { value: "senior", label: "Senior" },
+                  { value: "lead", label: "Lead" },
+                ]}
+              />
             </Field>
 
             <Field label="Mode">
-              <select className="field-input" value={form.mode} onChange={(e) => setForm({ ...form, mode: e.target.value })}>
-                <option value="job">Job</option>
-                <option value="internship">Internship</option>
-              </select>
+              <CustomSelect
+                value={form.mode}
+                onChange={(val) => setForm({ ...form, mode: val })}
+                placeholder="Select mode"
+                options={[
+                  { value: "job", label: "Job" },
+                  { value: "internship", label: "Internship" },
+                ]}
+              />
             </Field>
 
             <Field label="Skills" className="lg:col-span-2">
@@ -368,10 +560,17 @@ export default function ProfilePage() {
             onChange={(event) => setAlertEmail(event.target.value)}
             required
           />
-          <select className="field-input" value={frequency} onChange={(event) => setFrequency(event.target.value)}>
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-          </select>
+          <div className="relative w-full">
+            <CustomSelect
+              value={frequency}
+              onChange={setFrequency}
+              placeholder="Select frequency"
+              options={[
+                { value: "daily", label: "Daily" },
+                { value: "weekly", label: "Weekly" },
+              ]}
+            />
+          </div>
           <button type="submit" className="primary-button">Save alerts</button>
         </form>
         {alertMessage && <p className="mt-4 text-sm font-semibold text-slate-600">{alertMessage}</p>}

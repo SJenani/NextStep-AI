@@ -34,7 +34,7 @@ from fraud_detector import analyze_job_posting
 from interview_module import generate_interview_pack
 from job_api import derive_company_trends, fetch_jobs, fetch_jobs_with_status
 from job_api import router as job_router
-from ml_ranker import build_skill_dashboard, generate_resume_audit, normalize_skills, rank_jobs
+from ml_ranker import build_skill_dashboard, generate_resume_audit, normalize_skills, rank_jobs, _tokenize_resume_role
 from notification_service import start_scheduler, stop_scheduler, upsert_subscription
 from resume_parser import analyze_documents
 from roadmap_generator import generate_learning_roadmap
@@ -1083,6 +1083,27 @@ async def upload_resume(
     )
     resume_audit = await build_resume_audit_payload(audit_profile)
 
+    target_role_for_fit = (profile.desired_role if profile else "") or analysis["target_role"]
+    role_tokens = _tokenize_resume_role(target_role_for_fit) if target_role_for_fit else []
+
+    enriched_documents = []
+    for doc in analysis["documents"]:
+        doc_skills = doc.get("extracted_skills", [])
+        if target_role_for_fit:
+            normalized_skills = normalize_skills(doc_skills)
+            matched_tokens = []
+            for token in role_tokens:
+                if any(token in skill for skill in normalized_skills):
+                    matched_tokens.append(token)
+            
+            fit_score = round(5 + ((len(matched_tokens) / max(len(role_tokens), 1)) * 95), 2) if role_tokens else 5.0
+            
+            doc["fit_check"] = {
+                "score": min(fit_score, 100.0),
+                "matched_tokens": matched_tokens
+            }
+        enriched_documents.append(doc)
+
     auto_filled_profile = {
         "skills": analysis["skills"],
         "tools": analysis["tools"],
@@ -1122,7 +1143,7 @@ async def upload_resume(
             "suggested_domain": analysis["suggested_domain"],
             "source_documents": [item["filename"] for item in analysis["documents"]],
         },
-        "documents": analysis["documents"],
+        "documents": enriched_documents,
         "resume_audit": resume_audit,
     }
 

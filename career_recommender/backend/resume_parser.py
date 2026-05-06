@@ -471,13 +471,22 @@ def _extract_certificates(lines: list[str], filename: str | None = None, documen
     return _dedupe_preserve_order(results, 8)
 
 
-def _infer_years_of_experience(text: str) -> float:
+def _infer_years_of_experience(text: str, sections: dict[str, list[str]] = None) -> float:
     lowered = (text or "").lower()
-    explicit_matches = [float(value) for value in re.findall(r"(\d+(?:\.\d+)?)\+?\s*(?:years|year|yrs|yr)\b", lowered)]
+    # Stricter regex: must be followed by "of experience", "experience", "exp", or "work"
+    explicit_matches = [float(value) for value in re.findall(r"(\d+(?:\.\d+)?)\+?\s*(?:years|year|yrs|yr)(?:\s+of)?\s+(?:experience|exp|work)\b", lowered)]
+    
     inferred_ranges: list[float] = []
     current_year = datetime.utcnow().year
 
-    for start_year, end_year, ongoing in DATE_RANGE_RE.findall(lowered):
+    # Limit date range scanning to the experience section if available
+    experience_text = ""
+    if sections and "experience" in sections:
+        experience_text = "\n".join(sections["experience"]).lower()
+    else:
+        experience_text = lowered
+
+    for start_year, end_year, ongoing in DATE_RANGE_RE.findall(experience_text):
         start = int(start_year)
         end = current_year if ongoing else int(end_year)
         if end >= start:
@@ -538,7 +547,7 @@ def analyze_document(file_bytes: bytes, filename: str, document_type: str) -> di
     projects = _extract_project_entries(sections["projects"], limit=6)
     experience_highlights = _extract_experience_entries(sections["experience"], limit=6)
     certificates = _extract_certificates(sections["certifications"], filename=filename, document_type=document_type)
-    years_of_experience = _infer_years_of_experience(text)
+    years_of_experience = _infer_years_of_experience(text, sections)
 
     return {
         "document_type": document_type,

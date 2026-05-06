@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import client from "../api/client";
 import { DashboardSkeleton } from "../components/skeletons/PageSkeleton";
 import { getCourseForSkill } from "../utils/courseLinks";
+import ScrollToTopButton from "../components/ScrollToTopButton";
 
 function buildRequiredLearningPlatforms(missingSkills = [], quickWins = []) {
   const prioritySkills = Array.from(new Set([
@@ -728,6 +729,8 @@ export default function DashboardPage() {
           </section>
         </>
       )}
+
+      <ScrollToTopButton />
     </div>
   );
 }
