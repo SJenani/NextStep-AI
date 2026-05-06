@@ -1,0 +1,161 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #0f172a;
+  background: #ffffff;
+}
+
+html {
+  background: #ffffff;
+  font-size: 90%;
+}
+
+body {
+@apply h-screen bg-slate-50 text-slate-900 antialiased m-0 p-0;
+  font-family: "Inter", sans-serif;
+}
+
+#root {
+  @apply h-full m-0 p-0;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+@layer components {
+  .card-panel {
+    @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.08)];
+  }
+
+  .field-label {
+    @apply mb-2 block text-sm font-semibold text-slate-600;
+  }
+
+  .field-input {
+    @apply w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-[0_6px_18px_rgba(15,23,42,0.04)] outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:shadow-[0_10px_24px_rgba(59,130,246,0.12)];
+  }
+
+  .primary-button {
+    @apply inline-flex items-center justify-center rounded-2xl border border-slate-900 bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(15,23,42,0.14)] transition hover:bg-slate-800 hover:shadow-[0_18px_32px_rgba(15,23,42,0.18)];
+  }
+
+  .secondary-button {
+    @apply inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 shadow-[0_8px_22px_rgba(15,23,42,0.05)] transition hover:border-slate-300 hover:bg-slate-50 hover:shadow-[0_12px_26px_rgba(15,23,42,0.08)];
+  }
+
+  .accent-chip {
+    @apply inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-3 py-1.5 text-sm font-semibold text-slate-900;
+  }
+
+  .muted-chip {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold;
+  }
+
+  .tab-pill {
+    @apply inline-flex items-center rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.04)] transition hover:border-slate-300 hover:text-slate-900;
+  }
+
+  .tab-pill-active {
+    @apply border-slate-900 bg-slate-900 text-white shadow-[0_14px_26px_rgba(15,23,42,0.16)];
+  }
+
+  .step-pill {
+    @apply flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900;
+  }
+
+  .step-dot {
+    @apply inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold;
+  }
+
+  .sr-only {
+    @apply absolute h-px w-px overflow-hidden whitespace-nowrap border-0 p-0;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Print styles                                                       */
+/* ------------------------------------------------------------------ */
+@media print {
+  @page {
+    margin: 1.5cm;
+  }
+
+  body {
+    background: white !important;
+    color: #0f172a !important;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+
+  .print\:block {
+    display: block !important;
+  }
+
+  .print\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .print\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .print\:gap-4 {
+    gap: 1rem !important;
+  }
+
+  .print\:border-0 {
+    border-width: 0 !important;
+  }
+
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+
+  .print\:p-0 {
+    padding: 0 !important;
+  }
+
+  .print\:space-y-4 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse))) !important;
+    margin-bottom: calc(1rem * var(--tw-space-y-reverse)) !important;
+  }
+
+  .print\:text-2xl {
+    font-size: 1.5rem !important;
+    line-height: 2rem !important;
+  }
+
+  .print\:text-xl {
+    font-size: 1.25rem !important;
+    line-height: 1.75rem !important;
+  }
+
+  .print\:text-lg {
+    font-size: 1.125rem !important;
+    line-height: 1.75rem !important;
+  }
+
+  .print\:text-xs {
+    font-size: 0.75rem !important;
+    line-height: 1rem !important;
+  }
+
+  .print\:leading-5 {
+    line-height: 1.25rem !important;
+  }
+
+  .card-panel {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
