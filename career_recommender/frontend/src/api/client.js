@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const client = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000",
+baseURL: import.meta.env.VITE_API_BASE_URL || "https://nextstep-backend-yku4.onrender.com",
 });
 
 client.interceptors.request.use((config) => {
@@ -23,7 +23,7 @@ export function getApiErrorMessage(error, fallback = "Something went wrong.") {
   }
 
   if (error.request) {
-    return "Cannot reach the backend server. Start FastAPI on http://127.0.0.1:8000 and try again.";
+return "Cannot reach the backend server. Please wait a few seconds and try again.";
   }
 
   return error.message || fallback;
