@@ -17,6 +17,7 @@ email-validator==2.2.0
 apscheduler==3.10.4
 psycopg2-binary==2.9.10
 redis==5.2.1
-sentence-transformers==4.1.0
 faiss-cpu==1.7.4
 numpy<2
+sentence-transformers==4.1.0
+torch
