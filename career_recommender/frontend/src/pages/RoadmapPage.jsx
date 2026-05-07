@@ -4,8 +4,7 @@ import client from "../api/client";
 import RoadmapTimeline from "../components/RoadmapTimeline";
 import ScrollToTopButton from "../components/ScrollToTopButton";
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "https://nextstep-backend-yku4.onrender.com").replace(/\/$/, "");
-
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
 function buildAbsoluteMediaUrl(path) {
   if (!path) {
     return "";
