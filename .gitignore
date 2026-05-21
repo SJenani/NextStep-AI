@@ -216,3 +216,23 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+# Node modules
+node_modules/
+
+# React build
+frontend/dist/
+
+# Media uploads
+media/
+*.webm
+*.mp4
+*.wav
+
+# AI uploads
+uploads/
+resume_uploads/
+certificates/
+
+# OS files
+.DS_Store
+Thumbs.db
