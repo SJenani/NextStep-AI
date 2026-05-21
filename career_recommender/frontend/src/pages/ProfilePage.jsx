@@ -4,6 +4,7 @@ import client from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { ProfileSkeleton } from "../components/skeletons/PageSkeleton";
 import { getOpportunityModeMismatch } from "../utils/opportunityMode";
+import toast from "react-hot-toast";
 
 const emptyForm = {
   skills: "",
@@ -238,10 +239,8 @@ function ComboBox({ value, onChange, options, placeholder, className = "" }) {
 export default function ProfilePage() {
   const { user } = useAuth() || {};
   const [form, setForm] = useState(emptyForm);
-  const [message, setMessage] = useState("");
   const [alertEmail, setAlertEmail] = useState(user?.email || "");
   const [frequency, setFrequency] = useState("daily");
-  const [alertMessage, setAlertMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState("");
@@ -262,7 +261,7 @@ export default function ProfilePage() {
         });
       } catch (error) {
         if (error.response?.status !== 404) {
-          setMessage("Unable to load profile.");
+          toast.error("Unable to load profile.");
         }
       } finally {
         setLoading(false);
@@ -287,12 +286,11 @@ export default function ProfilePage() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSaving(true);
-    setMessage("");
     try {
       await client.post("/profile/create", form);
-      setMessage("Profile saved successfully.");
+      toast.success("Profile saved successfully.");
     } catch (error) {
-      setMessage(error.response?.data?.detail || "Unable to save profile.");
+      toast.error(error.response?.data?.detail || "Unable to save profile.");
     } finally {
       setSaving(false);
     }
@@ -304,9 +302,9 @@ export default function ProfilePage() {
       const { data } = await client.get("/notifications/subscribe", {
         params: { email: alertEmail, frequency },
       });
-      setAlertMessage(data.message);
+      toast.success(data.message || "Notification subscription saved.");
     } catch (error) {
-      setAlertMessage(error.response?.data?.detail || "Unable to save notification preferences.");
+      toast.error(error.response?.data?.detail || "Unable to save notification preferences.");
     }
   };
 
@@ -314,7 +312,7 @@ export default function ProfilePage() {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setMessage("Please choose an image file for your profile picture.");
+      toast.error("Please choose an image file for your profile picture.");
       return;
     }
 
@@ -517,7 +515,6 @@ export default function ProfilePage() {
               {modeMismatchMessage}
             </div>
           )}
-          {message && <p className="mt-5 text-sm font-semibold text-slate-600">{message}</p>}
         </form>
 
         <div className="space-y-6">
@@ -573,7 +570,6 @@ export default function ProfilePage() {
           </div>
           <button type="submit" className="primary-button">Save alerts</button>
         </form>
-        {alertMessage && <p className="mt-4 text-sm font-semibold text-slate-600">{alertMessage}</p>}
       </section>
     </div>
   );

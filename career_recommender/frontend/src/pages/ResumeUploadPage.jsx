@@ -71,7 +71,6 @@ function ChipCloud({ title, tone, items, emptyText }) {
 
 export default function ResumeUploadPage() {
   const [resumeFile, setResumeFile] = useState(null);
-  const [certificateFiles, setCertificateFiles] = useState([]);
   const [result, setResult] = useState(null);
   const [audit, setAudit] = useState(null);
   const [targetRole, setTargetRole] = useState("");
@@ -145,18 +144,13 @@ export default function ResumeUploadPage() {
 
   const handleUpload = async (event) => {
     event.preventDefault();
-    if (!resumeFile && !certificateFiles.length) {
-      setMessage("Upload at least one PDF: resume or certificate.");
+    if (!resumeFile) {
+      setMessage("Upload a resume PDF.");
       return;
     }
 
     const formData = new FormData();
-    if (resumeFile) {
-      formData.append("resume", resumeFile);
-    }
-    certificateFiles.forEach((file) => {
-      formData.append("certificates", file);
-    });
+    formData.append("resume", resumeFile);
 
     try {
       setLoadingAudit(true);
@@ -214,21 +208,15 @@ export default function ResumeUploadPage() {
     <section className="space-y-6">
       <div className="card-panel">
         <p className="font-mono text-xs uppercase tracking-[0.25em] text-tide">Instant Profile Builder</p>
-        <h2 className="mt-3 font-display text-4xl font-bold text-slate-950">Upload resume and certificates to build your profile faster</h2>
+        <h2 className="mt-3 font-display text-4xl font-bold text-slate-950">Upload resume to build your profile faster</h2>
         <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-600">
           The analyzer reads your documents, extracts skills, tools, projects, and experience highlights, then builds a structured profile
           draft that improves recommendation quality and ATS coaching.
         </p>
 
         <form onSubmit={handleUpload} className="mt-8 space-y-5">
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid gap-4">
             <FileSummary label="Resume PDF" file={resumeFile} onChange={(e) => setResumeFile(e.target.files?.[0] || null)} />
-            <FileSummary
-              label="Certificates PDFs"
-              file={certificateFiles}
-              multiple
-              onChange={(e) => setCertificateFiles(Array.from(e.target.files || []))}
-            />
           </div>
 
           <div className="grid gap-4 xl:grid-cols-[1.4fr_auto_auto]">
